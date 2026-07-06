@@ -4,6 +4,9 @@ Plugin para Roundcube Webmail que permite que usuários definidos como **admins 
 ativem ou desativem o 2FA (plugin [`twofactor_gauthenticator`](https://github.com/alexandregz/twofactor_gauthenticator))
 de outros usuários — mas **somente usuários do mesmo domínio de e-mail** do admin logado.
 
+<img width="1919" height="995" alt="image" src="https://github.com/user-attachments/assets/49e5a568-cdaa-4801-a4a6-97a9ec0ddd9e" />
+
+
 ## Instalação
 
 1. Copie a pasta `admin2fa_domain` para `HOME_RC/plugins/`.
