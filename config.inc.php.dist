@@ -1,0 +1,26 @@
+<?php
+
+// ---------------------------------------------------------------------
+// admin2fa_domain - configuracao
+// Copie este arquivo para config.inc.php e ajuste os valores abaixo.
+// ---------------------------------------------------------------------
+
+// Lista de usuarios (e-mails completos) que serao tratados como
+// "admin de dominio". Cada item e uma regex ancorada (^...$), entao
+// pode usar tanto e-mails exatos quanto padroes com curinga.
+//
+// O dominio que cada admin podera gerenciar e deduzido automaticamente
+// a partir do proprio e-mail dele (tudo que vem depois do @).
+//
+// Exemplos:
+$config['admin2fa_domain_admins'] = array(
+    'admin@eth1consultoria\.com\.br',   // e-mail exato
+    'ti@.*',                             // qualquer conta "ti@" de qualquer dominio
+    // 'suporte@clientex\.com\.br',
+);
+
+// NOTA: este plugin nao define twofactor_pref_encrypt. Ele apenas LE o
+// valor que ja estiver configurado pelo plugin twofactor_gauthenticator
+// (plugins/twofactor_gauthenticator/config.inc.php) para saber se deve
+// descriptografar as preferencias ao ler/gravar. Nao precisa duplicar
+// essa opcao aqui.

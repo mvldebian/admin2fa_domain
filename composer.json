@@ -1,0 +1,14 @@
+{
+    "name": "mvldebian/admin2fa_domain",
+    "type": "roundcube-plugin",
+    "description": "Ative ou desative a Autenticação 2FA (Google Authenticator) para os usuários do seu Domínio.",
+    "homepage": "https://github.com/mvldebian/admin2fa_domain",
+    "version": "1.1.0",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Marcelo Leães",
+            "email": "marcelo@eth1.com.br"
+        }
+    ]
+}
