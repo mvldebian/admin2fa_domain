@@ -36,10 +36,15 @@
                                 : rcmail.gettext('inactive', 'admin2fa_domain'),
                             'confirmation'
                         );
-                        // recarrega a lista (mantendo a pagina atual) para refletir o novo estado
+                        // recarrega a lista (mantendo pagina e busca atuais) para refletir o novo estado
                         var params = new URLSearchParams(window.location.search);
                         var currentPage = params.get('_p') || 1;
-                        rcmail.goto_url('plugin.admin2fa_domain', { _p: currentPage });
+                        var currentSearch = params.get('_q') || '';
+                        var reloadArgs = { _p: currentPage };
+                        if (currentSearch) {
+                            reloadArgs._q = currentSearch;
+                        }
+                        rcmail.goto_url('plugin.admin2fa_domain', reloadArgs);
                     } else {
                         var key = 'admin2fa_error_' + (resp.error || 'unknown');
                         var msg = rcmail.gettext(key, 'admin2fa_domain');

@@ -32,7 +32,7 @@ class admin2fa_domain extends rcube_plugin
     public $task = 'settings';
 
     /** quantidade de usuarios por pagina na listagem */
-    const PAGE_SIZE = 12;
+    const PAGE_SIZE = 50;
 
     /** @var rcmail */
     private $rc;
@@ -95,12 +95,13 @@ class admin2fa_domain extends rcube_plugin
 
     public function render_list()
     {
-        $page  = max(1, (int) rcube_utils::get_input_value('_p', rcube_utils::INPUT_GET));
-        $total = $this->_domainUsersCount();
-        $pages = max(1, (int) ceil($total / self::PAGE_SIZE));
-        $page  = min($page, $pages);
+        $search = trim((string) rcube_utils::get_input_value('_q', rcube_utils::INPUT_GET));
+        $page   = max(1, (int) rcube_utils::get_input_value('_p', rcube_utils::INPUT_GET));
+        $total  = $this->_domainUsersCount($search);
+        $pages  = max(1, (int) ceil($total / self::PAGE_SIZE));
+        $page   = min($page, $pages);
 
-        $users = $this->_domainUsers($page);
+        $users = $this->_domainUsers($page, $search);
 
         $table = new html_table(array('cols' => 3, 'class' => 'records-table', 'id' => 'admin2fa-table'));
         $table->add_header(array('class' => 'email'), $this->gettext('email'));
@@ -141,13 +142,14 @@ class admin2fa_domain extends rcube_plugin
         }
 
         $out = html::div(array('class' => 'settingsbox'),
-            html::tag('h3', array('id' => 'prefs-title'), rcube::Q($this->gettext('menutitle') . ' - @' . $this->domain)) .
+            html::tag('h3', array('id' => 'prefs-title'), rcube::Q($this->gettext('menutitle') . ' do Domínio @' . $this->domain)) .
             html::div(array('class' => 'boxcontent'),
                 html::p(array('class' => 'admin2fa-intro'), rcube::Q(
                     str_replace('{total}', $total, $this->gettext('introcount'))
                 )) .
+                $this->_renderSearchBox($search) .
                 html::div(array('class' => 'admin2fa-scroll'), $table->show()) .
-                $this->_renderPager($page, $pages)
+                $this->_renderPager($page, $pages, $search)
             )
         );
 
@@ -155,20 +157,49 @@ class admin2fa_domain extends rcube_plugin
     }
 
     /**
+     * Campo de busca (filtra por e-mail/parte do usuario dentro do dominio).
+     */
+    private function _renderSearchBox($search)
+    {
+        $form = html::tag('input', array(
+            'type'        => 'text',
+            'name'        => '_q',
+            'id'          => 'admin2fa-search',
+            'value'       => $search,
+            'placeholder' => rcube::Q($this->gettext('searchplaceholder')),
+            'class'       => 'admin2fa-search-input',
+        )) .
+        html::tag('input', array('type' => 'hidden', 'name' => '_task', 'value' => 'settings')) .
+        html::tag('input', array('type' => 'hidden', 'name' => '_action', 'value' => 'plugin.admin2fa_domain')) .
+        html::tag('button', array('type' => 'submit', 'class' => 'button mainaction'), rcube::Q($this->gettext('search')));
+
+        if ($search !== '') {
+            $clearUrl = $this->rc->url(array('_task' => 'settings', '_action' => 'plugin.admin2fa_domain'));
+            $form .= html::a(array('href' => $clearUrl, 'class' => 'button admin2fa-search-clear'), rcube::Q($this->gettext('searchclear')));
+        }
+
+        return html::tag('form', array('method' => 'get', 'class' => 'admin2fa-searchform'), $form);
+    }
+
+    /**
      * Monta os links de paginacao (anterior / numeros / proxima).
      */
-    private function _renderPager($page, $pages)
+    private function _renderPager($page, $pages, $search = '')
     {
         if ($pages <= 1) {
             return '';
         }
 
-        $baseUrl = function ($p) {
-            return $this->rc->url(array(
+        $baseUrl = function ($p) use ($search) {
+            $args = array(
                 '_task'   => 'settings',
                 '_action' => 'plugin.admin2fa_domain',
                 '_p'      => $p,
-            ));
+            );
+            if ($search !== '') {
+                $args['_q'] = $search;
+            }
+            return $this->rc->url($args);
         };
 
         $links = array();
@@ -301,21 +332,22 @@ class admin2fa_domain extends rcube_plugin
 
     /**
      * Lista (user_id, username) dos usuarios do dominio do admin logado,
-     * paginado (self::PAGE_SIZE por pagina).
+     * paginado (self::PAGE_SIZE por pagina) e opcionalmente filtrado por
+     * um termo de busca (parte do e-mail).
      *
      * NOTA: rcube_db::set_limit() e protegido nesta versao do Roundcube,
      * entao montamos o LIMIT/OFFSET manualmente na query. Isso e seguro
      * porque $limit e $offset sao sempre inteiros (nunca vem direto do
      * usuario sem passar por (int) antes).
      */
-    private function _domainUsers($page = 1)
+    private function _domainUsers($page = 1, $search = '')
     {
         $db     = $this->rc->db;
         $limit  = (int) self::PAGE_SIZE;
         $offset = (max(1, (int) $page) - 1) * $limit;
 
         $sql = 'SELECT user_id, username FROM ' . $db->table_name('users')
-             . ' WHERE ' . $db->ilike('username', '%@' . $this->domain)
+             . ' WHERE ' . $this->_domainWhere($search)
              . ' ORDER BY username ASC'
              . ' LIMIT ' . $limit . ' OFFSET ' . $offset;
 
@@ -330,18 +362,40 @@ class admin2fa_domain extends rcube_plugin
     }
 
     /**
-     * Conta o total de usuarios do dominio, para calcular o total de paginas.
+     * Conta o total de usuarios do dominio (respeitando o filtro de
+     * busca), para calcular o total de paginas.
      */
-    private function _domainUsersCount()
+    private function _domainUsersCount($search = '')
     {
         $db  = $this->rc->db;
         $sql = 'SELECT COUNT(*) AS cnt FROM ' . $db->table_name('users')
-             . ' WHERE ' . $db->ilike('username', '%@' . $this->domain);
+             . ' WHERE ' . $this->_domainWhere($search);
 
         $result = $db->query($sql);
         $row    = $db->fetch_assoc($result);
 
         return $row ? (int) $row['cnt'] : 0;
+    }
+
+    /**
+     * Monta a clausula WHERE (sempre restrita ao dominio do admin logado)
+     * combinada com o termo de busca opcional, usando placeholders (sem
+     * concatenar valor de usuario direto na query).
+     */
+    private function _domainWhere($search = '')
+    {
+        $db = $this->rc->db;
+
+        $where = $db->ilike('username', '%@' . $this->domain);
+
+        $search = trim((string) $search);
+        if ($search !== '') {
+            // remove o "@dominio" caso o admin tenha digitado o e-mail completo
+            $search = str_ireplace('@' . $this->domain, '', $search);
+            $where .= ' AND ' . $db->ilike('username', '%' . $search . '%');
+        }
+
+        return $where;
     }
 
     /**

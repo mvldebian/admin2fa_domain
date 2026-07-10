@@ -57,6 +57,67 @@
     box-shadow: 0 1px 0 #e0e0e0;
 }
 
+.admin2fa-searchform {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.admin2fa-search-input {
+    flex: 0 1 320px;
+    padding: 7px 12px;
+    font-size: 13px;
+    border: 1px solid #d0d0d0;
+    border-radius: 20px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin2fa-search-input:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+.admin2fa-searchform .button {
+    padding: 7px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.admin2fa-searchform .button.mainaction {
+    background: #1a73e8;
+    color: #fff;
+}
+
+.admin2fa-searchform .button.mainaction:hover {
+    background: #1558b0;
+}
+
+.admin2fa-searchform .button:active {
+    transform: scale(0.97);
+}
+
+.admin2fa-search-clear {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #555;
+    background: #f0f0f0;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin2fa-search-clear:hover {
+    background: #e2e2e2;
+    color: #222;
+}
+
 .admin2fa-pager {
     display: flex;
     align-items: center;
